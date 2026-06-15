@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas Studio — Architectural Portfolio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&family=Inter:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ivory: #F2EFE8;
+    --stone: #C8BFB0;
+    --graphite: #2A2926;
+    --slate: #545250;
+    --copper: #B8956A;
+    --fog: rgba(242,239,232,0.06);
+    --glass: rgba(42,41,38,0.72);
+  }
+
+  html { scroll-behavior: auto; }
+
+  body {
+    background: #0D0C0B;
+    color: var(--ivory);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  #cursor {
+    position: fixed; top: 0; left: 0; z-index: 9999;
+    pointer-events: none;
+    mix-blend-mode: difference;
+  }
+  #cursor-dot {
+    width: 8px; height: 8px;
+    background: var(--ivory);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  #cursor-ring {
+    position: fixed; top: 0; left: 0;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(242,239,232,0.5);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9998;
+    transition: transform 0.12s ease, width 0.2s ease, height 0.2s ease, border-color 0.2s;
+  }
+  body.hovering #cursor-ring {
+    width: 60px; height: 60px;
+    border-color: var(--copper);
+  }
+
+  /* Scroll container */
+  #scroll-container {
+    height: 700vh;
+    position: relative;
+  }
+
+  /* Canvas */
+  #three-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* UI Layers */
+  #ui-layer {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* Intro */
+  #intro-panel {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    transition: opacity 0.8s ease;
+  }
+  #intro-panel .firm-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: 0.18em;
+    color: var(--ivory);
+    line-height: 1;
+  }
+  #intro-panel .firm-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    color: var(--stone);
+    margin-top: 1.4rem;
+    text-transform: uppercase;
+  }
+  #intro-panel .scroll-hint {
+    margin-top: 3.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.5;
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+  #intro-panel .scroll-hint span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--stone);
+  }
+  .scroll-line {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--copper));
+    animation: scrollDown 2.4s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+  @keyframes scrollDown { 0%{transform:scaleY(0);transform-origin:top} 50%{transform:scaleY(1);transform-origin:top} 51%{transform:scaleY(1);transform-origin:bottom} 100%{transform:scaleY(0);transform-origin:bottom} }
+
+  /* Nav */
+  #nav {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 2rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.6s;
+  }
+  #nav.visible { opacity: 1; }
+  #nav .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 1.1rem;
+    letter-spacing: 0.2em;
+    color: var(--ivory);
+  }
+  #nav .nav-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--stone);
+  }
+
+  /* Project info panel */
+  #project-panel {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%;
+    padding: 0 3rem 3.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  #project-panel.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .proj-meta-left .proj-index {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--copper);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+  .proj-meta-left .proj-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    color: var(--ivory);
+    max-width: 600px;
+  }
+  .proj-meta-right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: flex-end;
+  }
+  .proj-stat {
+    display: flex;
+    gap: 1.5rem;
+    align-items: baseline;
+  }
+  .proj-stat .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    color: var(--copper);
+    text-transform: uppercase;
+  }
+  .proj-stat .value {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: var(--stone);
+    letter-spacing: 0.05em;
+  }
+  #explore-btn {
+    margin-top: 1.2rem;
+    background: none;
+    border: 1px solid rgba(184,149,106,0.4);
+    color: var(--copper);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 0.8rem 1.6rem;
+    cursor: pointer;
+    pointer-events: all;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  #explore-btn:hover {
+    background: rgba(184,149,106,0.1);
+    border-color: var(--copper);
+  }
+
+  /* Progress bar */
+  #progress-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 1px;
+    background: linear-gradient(to right, var(--copper), transparent);
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* Mini map */
+  #minimap {
+    position: absolute;
+    right: 3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.6s;
+  }
+  #minimap.visible { opacity: 1; }
+  .minimap-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(200,191,176,0.25);
+    border: 1px solid rgba(200,191,176,0.2);
+    transition: all 0.4s;
+    cursor: pointer;
+    pointer-events: all;
+  }
+  .minimap-dot.active {
+    background: var(--copper);
+    border-color: var(--copper);
+    box-shadow: 0 0 8px rgba(184,149,106,0.5);
+    transform: scale(1.4);
+  }
+  .minimap-line {
+    width: 1px; height: 24px;
+    background: rgba(200,191,176,0.12);
+  }
+
+  /* Detail Modal */
+  #detail-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  #detail-modal.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+  #modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(13,12,11,0.85);
+    backdrop-filter: blur(12px);
+    cursor: pointer;
+  }
+  #modal-content {
+    position: relative;
+    z-index: 1;
+    margin: auto;
+    width: min(900px, 94vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #16150F;
+    border: 1px solid rgba(200,191,176,0.08);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(30px);
+    transition: transform 0.5s ease;
+  }
+  #detail-modal.open #modal-content {
+    transform: translateY(0);
+  }
+  #modal-content::-webkit-scrollbar { width: 3px; }
+  #modal-content::-webkit-scrollbar-thumb { background: var(--copper); }
+  .modal-header {
+    padding: 3rem 3rem 2rem;
+    border-bottom: 1px solid rgba(200,191,176,0.07);
+    position: relative;
+  }
+  .modal-header .m-category {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    color: var(--copper);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+  .modal-header .m-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    letter-spacing: 0.04em;
+    color: var(--ivory);
+  }
+  #modal-close {
+    position: absolute;
+    top: 2.5rem; right: 2.5rem;
+    width: 36px; height: 36px;
+    background: none;
+    border: 1px solid rgba(200,191,176,0.2);
+    color: var(--stone);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  #modal-close:hover { border-color: var(--copper); color: var(--copper); }
+  .modal-stats {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid rgba(200,191,176,0.07);
+  }
+  .modal-stat {
+    flex: 1;
+    padding: 1.5rem 2rem;
+    border-right: 1px solid rgba(200,191,176,0.07);
+  }
+  .modal-stat:last-child { border-right: none; }
+  .modal-stat .ms-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    color: var(--copper);
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .modal-stat .ms-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 300;
+    color: var(--stone);
+  }
+  .modal-body {
+    padding: 2.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .modal-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 300;
+    line-height: 1.85;
+    color: var(--stone);
+    max-width: 620px;
+  }
+  .modal-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .modal-img {
+    aspect-ratio: 16/10;
+    overflow: hidden;
+    position: relative;
+  }
+  .modal-img .img-placeholder {
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: rgba(200,191,176,0.3);
+    text-transform: uppercase;
+  }
+  .modal-awards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .award-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: var(--copper);
+    border: 1px solid rgba(184,149,106,0.3);
+    padding: 0.4rem 0.8rem;
+    text-transform: uppercase;
+  }
+
+  /* Transition overlay */
+  #transition-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: #0D0C0B;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  /* Location label floating */
+  .location-label {
+    position: absolute;
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  .location-label.visible { opacity: 1; }
+  .location-label .loc-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    color: var(--copper);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .location-label .loc-line {
+    width: 1px; height: 20px;
+    background: linear-gradient(to bottom, var(--copper), transparent);
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"><div id="cursor-dot"></div></div>
+<div id="cursor-ring"></div>
+<div id="transition-overlay"></div>
+
+<div id="scroll-container">
+  <canvas id="three-canvas"></canvas>
+
+  <div id="ui-layer">
+    <!-- Intro -->
+    <div id="intro-panel">
+      <div class="firm-name">ATLAS<br>STUDIO</div>
+      <div class="firm-sub">Architecture &nbsp;·&nbsp; 2008–2024 &nbsp;·&nbsp; Selected Works</div>
+      <div class="scroll-hint">
+        <span>Scroll to explore</span>
+        <div class="scroll-line"></div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div id="nav">
+      <div class="nav-logo">ATLAS STUDIO</div>
+      <div class="nav-count" id="nav-count">01 / 06</div>
+    </div>
+
+    <!-- Project Panel -->
+    <div id="project-panel">
+      <div class="proj-meta-left">
+        <div class="proj-index" id="proj-index">Project 01</div>
+        <div class="proj-name" id="proj-name">Nordic Cultural Center</div>
+      </div>
+      <div class="proj-meta-right">
+        <div class="proj-stat"><span class="label">Location</span><span class="value" id="proj-loc">Oslo, Norway</span></div>
+        <div class="proj-stat"><span class="label">Year</span><span class="value" id="proj-year">2021</span></div>
+        <div class="proj-stat"><span class="label">Area</span><span class="value" id="proj-area">12,400 m²</span></div>
+        <div class="proj-stat"><span class="label">Program</span><span class="value" id="proj-prog">Cultural</span></div>
+        <button id="explore-btn" onclick="openModal()">View Project →</button>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div id="progress-bar"></div>
+
+    <!-- Minimap -->
+    <div id="minimap" id="minimap">
+      <div class="minimap-dot active" onclick="jumpToProject(0)"></div>
+      <div class="minimap-line"></div>
+      <div class="minimap-dot" onclick="jumpToProject(1)"></div>
+      <div class="minimap-line"></div>
+      <div class="minimap-dot" onclick="jumpToProject(2)"></div>
+      <div class="minimap-line"></div>
+      <div class="minimap-dot" onclick="jumpToProject(3)"></div>
+      <div class="minimap-line"></div>
+      <div class="minimap-dot" onclick="jumpToProject(4)"></div>
+      <div class="minimap-line"></div>
+      <div class="minimap-dot" onclick="jumpToProject(5)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detail-modal">
+  <div id="modal-backdrop" onclick="closeModal()"></div>
+  <div id="modal-content">
+    <div class="modal-header">
+      <div class="m-category" id="m-category">Cultural / Public</div>
+      <div class="m-title" id="m-title">Nordic Cultural Center</div>
+      <button id="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-stats">
+      <div class="modal-stat"><div class="ms-label">Location</div><div class="ms-value" id="ms-loc">Oslo, Norway</div></div>
+      <div class="modal-stat"><div class="ms-label">Year</div><div class="ms-value" id="ms-year">2021</div></div>
+      <div class="modal-stat"><div class="ms-label">Area</div><div class="ms-value" id="ms-area">12,400 m²</div></div>
+      <div class="modal-stat"><div class="ms-label">Client</div><div class="ms-value" id="ms-client">City of Oslo</div></div>
+    </div>
+    <div class="modal-body">
+      <p class="modal-description" id="m-desc">A civic landmark conceived as a folded topographic plate that extends the landscape into the built environment. The building negotiates the dialogue between fjord, forest, and urban fabric — creating thresholds that dissolve the boundary between interior and exterior. Raw concrete, weathered steel, and local timber form a material palette that ages in dialogue with the Nordic climate.</p>
+      <div class="modal-images" id="m-images"></div>
+      <div class="modal-awards" id="m-awards"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── PROJECT DATA ───────────────────────────────────────────────
+const PROJECTS = [
+  {
+    name: "Nordic Cultural Center",
+    location: "Oslo, Norway",
+    coords: [10.75, 59.91],
+    year: "2021",
+    area: "12,400 m²",
+    category: "Cultural / Public",
+    program: "Cultural",
+    description: "A civic landmark conceived as a folded topographic plate that extends the landscape into the built environment. The building negotiates the dialogue between fjord, forest, and urban fabric — creating thresholds that dissolve the boundary between interior and exterior. Raw concrete, weathered steel, and local timber form a material palette that ages in dialogue with the Nordic climate.",
+    client: "City of Oslo",
+    awards: ["Pritzker Nomination 2022", "WAF Shortlist 2022", "A+Award Winner"],
+    color: 0x8BA0A8,
+    accentColor: 0xB8D4DC,
+    buildingType: "cultural"
+  },
+  {
+    name: "The Meridian Tower",
+    location: "Dubai, UAE",
+    coords: [55.27, 25.20],
+    year: "2023",
+    area: "68,000 m²",
+    category: "Mixed-Use / High-rise",
+    program: "Mixed-Use",
+    description: "A spiraling mixed-use tower that reinterprets the traditional Islamic mashrabiya screen at an architectural scale. The parametric facade filters desert light while creating a shaded thermal buffer — reducing solar gain by 40% without sacrificing the panoramic Gulf views. The tower holds residences, offices, and a sky-garden at its crown.",
+    client: "Meridian Properties",
+    awards: ["CTBUH 2024", "Dezeen Awards 2023"],
+    color: 0xC8A878,
+    accentColor: 0xE8D0A8,
+    buildingType: "tower"
+  },
+  {
+    name: "Kyoto Forest Pavilion",
+    location: "Kyoto, Japan",
+    coords: [135.77, 34.99],
+    year: "2019",
+    area: "2,800 m²",
+    category: "Cultural / Landscape",
+    program: "Pavilion",
+    description: "A meditation pavilion set within a protected cedar forest on the outskirts of Kyoto. The structure is composed of a single hyperbolic shell of cross-laminated timber — its curvature derived from the geometry of a folded sheet of traditional washi paper. Rain, light, and seasonal change are choreographed as primary spatial experiences.",
+    client: "Kyoto Arts Foundation",
+    awards: ["AR Award 2020", "Wood Design Award 2020"],
+    color: 0x7A9468,
+    accentColor: 0xA8C498,
+    buildingType: "pavilion"
+  },
+  {
+    name: "São Paulo Urban Block",
+    location: "São Paulo, Brazil",
+    coords: [-46.63, -23.55],
+    year: "2022",
+    area: "31,200 m²",
+    category: "Residential / Urban",
+    program: "Residential",
+    description: "A heterogeneous urban block that reconstitutes the eroded street fabric of Vila Madalena. Six residential towers of varying heights are unified by a continuous public ground plane — market, workshop, and garden — that activates the block interior and connects two formerly severed streets. The towers are clad in regional ceramic tiles in a gradient from terracotta to white.",
+    client: "Construtora Paulista",
+    awards: ["IAB Award 2023", "Vanguarda Prize 2022"],
+    color: 0xC87848,
+    accentColor: 0xE8A878,
+    buildingType: "residential"
+  },
+  {
+    name: "Port of Marseille Terminal",
+    location: "Marseille, France",
+    coords: [5.37, 43.30],
+    year: "2020",
+    area: "22,500 m²",
+    category: "Infrastructure / Public",
+    program: "Transport",
+    description: "A cruise terminal that reinterprets the Mediterranean port hall as a place of civic arrival. A single wave-form concrete roof — 220 meters long and 18 meters above the quay — shelters the passenger flows while framing views to the old port and the Basilica of Notre-Dame de la Garde. The building's section is derived from a study of historic Marseillais vaulted markets.",
+    client: "Port Authority of Marseille",
+    awards: ["EU Mies Award Finalist 2021", "WAF Best Transport 2020"],
+    color: 0x8898B0,
+    accentColor: 0xA8C0D8,
+    buildingType: "terminal"
+  },
+  {
+    name: "Lagos Research Campus",
+    location: "Lagos, Nigeria",
+    coords: [3.39, 6.45],
+    year: "2024",
+    area: "45,600 m²",
+    category: "Academic / Research",
+    program: "Education",
+    description: "A research and innovation campus designed around a courtyard typology derived from traditional Yoruba compound architecture. Covered walkways, shaded courtyards, and a central agora create a climate-responsive campus where informal exchange is as valued as formal research. Indigenous hardwoods, rammed earth walls, and photovoltaic brise-soleils form a contemporary material vocabulary rooted in West African building culture.",
+    client: "Lagos State University",
+    awards: ["WAF 2024 Shortlist", "ArchDaily Building of the Year 2024"],
+    color: 0xC8A858,
+    accentColor: 0xE8C878,
+    buildingType: "campus"
+  }
+];
+
+// ─── STATE ──────────────────────────────────────────────────────
+let currentProject = -1;
+let targetProject = 0;
+let scrollProgress = 0;
+let isAnimating = false;
+let modalOpen = false;
+
+// ─── THREE.JS SETUP ─────────────────────────────────────────────
+const canvas = document.getElementById('three-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.setClearColor(0x0D0C0B);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0D0C0B, 0.018);
+
+const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 28, 32);
+camera.lookAt(0, 0, 0);
+
+// Camera state for smooth interpolation
+const camState = {
+  pos: new THREE.Vector3(0, 28, 32),
+  target: new THREE.Vector3(0, 0, 0),
+  fov: 52
+};
+const camTarget = {
+  pos: new THREE.Vector3(0, 28, 32),
+  target: new THREE.Vector3(0, 0, 0),
+  fov: 52
+};
+
+// ─── LIGHTING ───────────────────────────────────────────────────
+const ambientLight = new THREE.AmbientLight(0x2A2820, 1.8);
+scene.add(ambientLight);
+
+const sunLight = new THREE.DirectionalLight(0xFFF4E0, 2.2);
+sunLight.position.set(15, 25, 10);
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.set(2048, 2048);
+sunLight.shadow.camera.near = 0.5;
+sunLight.shadow.camera.far = 150;
+sunLight.shadow.camera.left = -40;
+sunLight.shadow.camera.right = 40;
+sunLight.shadow.camera.top = 40;
+sunLight.shadow.camera.bottom = -40;
+sunLight.shadow.bias = -0.001;
+scene.add(sunLight);
+
+const fillLight = new THREE.DirectionalLight(0x8090A8, 0.5);
+fillLight.position.set(-10, 10, -15);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xB8D0E8, 0.3);
+rimLight.position.set(0, 5, -20);
+scene.add(rimLight);
+
+// ─── GROUND PLANE ───────────────────────────────────────────────
+const groundGeo = new THREE.PlaneGeometry(200, 200, 64, 64);
+const groundPos = groundGeo.attributes.position;
+// Subtle terrain undulation
+for (let i = 0; i < groundPos.count; i++) {
+  const x = groundPos.getX(i);
+  const y = groundPos.getY(i);
+  const z = Math.sin(x * 0.08) * Math.cos(y * 0.06) * 0.8
+           + Math.sin(x * 0.2 + 0.5) * Math.cos(y * 0.15) * 0.3;
+  groundPos.setZ(i, z);
+}
+groundGeo.computeVertexNormals();
+
+const groundMat = new THREE.MeshStandardMaterial({
+  color: 0x1A1812,
+  roughness: 0.95,
+  metalness: 0.0,
+});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Grid lines
+const gridHelper = new THREE.GridHelper(200, 80, 0x2A2820, 0x2A2820);
+gridHelper.position.y = 0.02;
+scene.add(gridHelper);
+
+// ─── ROAD NETWORK ───────────────────────────────────────────────
+function createRoad(x1,z1,x2,z2,width=0.18) {
+  const dir = new THREE.Vector3(x2-x1, 0, z2-z1);
+  const len = dir.length();
+  dir.normalize();
+  const geo = new THREE.PlaneGeometry(width, len);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x222018, roughness: 0.9 });
+  const road = new THREE.Mesh(geo, mat);
+  road.rotation.x = -Math.PI/2;
+  road.rotation.z = -Math.atan2(dir.z, dir.x) + Math.PI/2;
+  road.position.set((x1+x2)/2, 0.03, (z1+z2)/2);
+  scene.add(road);
+}
+// Connect projects with roads
+const pts = [
+  [-18,  -8], [ 14, -10], [ 26,  4],
+  [  6,  14], [-12,  10], [ 18, 18]
+];
+createRoad(-18,-8, 14,-10);
+createRoad(14,-10, 26,4);
+createRoad(26,4, 18,18);
+createRoad(18,18, 6,14);
+createRoad(6,14, -12,10);
+createRoad(-12,10, -18,-8);
+
+// ─── BUILDINGS ──────────────────────────────────────────────────
+const buildings = [];
+const buildingGroups = [];
+
+function createBuilding(project, px, pz, idx) {
+  const group = new THREE.Group();
+  group.position.set(px, 0, pz);
+
+  const type = project.buildingType;
+  const color = project.color;
+  const accent = project.accentColor;
+
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.65,
+    metalness: 0.12
+  });
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: accent,
+    roughness: 0.1,
+    metalness: 0.7,
+    transparent: true,
+    opacity: 0.75
+  });
+  const concreteMat = new THREE.MeshStandardMaterial({
+    color: 0x383530,
+    roughness: 0.88
+  });
+
+  if (type === 'tower') {
+    // Tower: spiraling form
+    const baseGeo = new THREE.BoxGeometry(1.4, 0.3, 1.4);
+    const base = new THREE.Mesh(baseGeo, concreteMat);
+    base.position.y = 0.15;
+    base.castShadow = true; group.add(base);
+
+    for (let f = 0; f < 9; f++) {
+      const h = 0.5 + f * 0.04;
+      const size = 1.2 - f * 0.06;
+      const geo = new THREE.BoxGeometry(size, h, size * 0.85);
+      const mesh = new THREE.Mesh(geo, f % 2 === 0 ? glassMat : mat);
+      mesh.rotation.y = f * 0.12;
+      mesh.position.y = 0.3 + f * 0.52 + h / 2;
+      mesh.castShadow = true;
+      group.add(mesh);
+    }
+  } else if (type === 'cultural') {
+    // Flat folded plate
+    const plateGeo = new THREE.BoxGeometry(2.8, 0.1, 1.8);
+    const plate = new THREE.Mesh(plateGeo, mat);
+    plate.position.y = 0.6; plate.rotation.z = 0.12;
+    plate.castShadow = true; group.add(plate);
+
+    const bodyGeo = new THREE.BoxGeometry(2.4, 1.0, 1.6);
+    const body = new THREE.Mesh(bodyGeo, concreteMat);
+    body.position.y = 0.5; body.castShadow = true; group.add(body);
+
+    const wingGeo = new THREE.BoxGeometry(1.2, 0.08, 2.0);
+    const wing = new THREE.Mesh(wingGeo, mat);
+    wing.position.set(1.6, 1.1, 0); wing.rotation.z = -0.15;
+    wing.castShadow = true; group.add(wing);
+  } else if (type === 'pavilion') {
+    // Shell form
+    const shGeo = new THREE.CylinderGeometry(1.8, 1.4, 0.6, 16, 1, true);
+    const shell = new THREE.Mesh(shGeo, mat);
+    shell.position.y = 0.6; group.add(shell);
+
+    const roofGeo = new THREE.SphereGeometry(1.8, 16, 8, 0, Math.PI*2, 0, Math.PI/3.5);
+    const roof = new THREE.Mesh(roofGeo, mat);
+    roof.position.y = 0.6; roof.castShadow = true; group.add(roof);
+
+    const colGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.7, 8);
+    for (let i = 0; i < 6; i++) {
+      const col = new THREE.Mesh(colGeo, concreteMat);
+      const a = (i / 6) * Math.PI * 2;
+      col.position.set(Math.cos(a)*1.4, 0.35, Math.sin(a)*1.4);
+      group.add(col);
+    }
+  } else if (type === 'residential') {
+    // Multi-tower cluster
+    const heights = [2.8, 2.0, 3.5, 1.8, 2.5, 1.5];
+    const offsets = [[-0.9,-0.6],[0.2,-0.8],[0.9,0.0],[-0.4,0.7],[0.6,0.8],[-1.1,0.4]];
+    heights.forEach((h, i) => {
+      const size = 0.42;
+      const geo = new THREE.BoxGeometry(size, h, size);
+      const mesh = new THREE.Mesh(geo, i%2===0 ? mat : glassMat);
+      mesh.position.set(offsets[i][0], h/2, offsets[i][1]);
+      mesh.castShadow = true; group.add(mesh);
+    });
+  } else if (type === 'terminal') {
+    // Wave roof
+    const roofPoints = [];
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20;
+      roofPoints.push(new THREE.Vector2(t * 3.5 - 1.75, Math.sin(t * Math.PI) * 1.0 + 0.4));
+    }
+    const roofShape = new THREE.LatheGeometry(roofPoints, 2);
+    const pts2 = [];
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20;
+      pts2.push(new THREE.Vector2(t * 3.5 - 1.75, Math.sin(t * Math.PI) * 1.0 + 0.4));
+    }
+    const shellGeo = new THREE.BoxGeometry(3.5, 0.08, 2.0);
+    const shell = new THREE.Mesh(shellGeo, mat);
+    shell.position.y = 1.4; shell.rotation.z = 0.05; shell.castShadow = true; group.add(shell);
+
+    const bodyGeo = new THREE.BoxGeometry(3.2, 0.9, 1.6);
+    const body = new THREE.Mesh(bodyGeo, concreteMat);
+    body.position.y = 0.45; group.add(body);
+
+    const glassGeo = new THREE.BoxGeometry(3.0, 0.7, 0.05);
+    const glass = new THREE.Mesh(glassGeo, glassMat);
+    glass.position.set(0, 0.55, 0.8); group.add(glass);
+  } else if (type === 'campus') {
+    // Courtyard typology
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x7A6848, roughness: 0.9 });
+    const wings = [
+      { w:2.4, h:1.2, d:0.5, ox:0, oz:-1.0 },
+      { w:2.4, h:1.2, d:0.5, ox:0, oz: 1.0 },
+      { w:0.5, h:1.2, d:2.5, ox:-1.0, oz:0 },
+      { w:0.5, h:1.2, d:2.5, ox: 1.0, oz:0 },
+    ];
+    wings.forEach(w => {
+      const geo = new THREE.BoxGeometry(w.w, w.h, w.d);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(w.ox, w.h/2, w.oz); mesh.castShadow = true; group.add(mesh);
+    });
+    // Canopy
+    const canGeo = new THREE.BoxGeometry(2.0, 0.06, 2.0);
+    const can = new THREE.Mesh(canGeo, wallMat);
+    can.position.y = 1.4; group.add(can);
+  }
+
+  // Site plane
+  const siteGeo = new THREE.PlaneGeometry(4, 4);
+  const siteMat = new THREE.MeshStandardMaterial({ color: 0x18160E, roughness: 0.9 });
+  const site = new THREE.Mesh(siteGeo, siteMat);
+  site.rotation.x = -Math.PI/2; site.position.y = 0.01;
+  site.receiveShadow = true; group.add(site);
+
+  // Scale start (for animation)
+  group.scale.set(1, 0, 1);
+  group.userData = { targetScale: 1, currentScale: 0 };
+
+  scene.add(group);
+  buildingGroups.push(group);
+  return group;
+}
+
+// Project positions on the "map"
+const PROJECT_POSITIONS = [
+  [-18, -8], [14, -10], [26, 4], [6, 14], [-12, 10], [18, 18]
+];
+
+PROJECTS.forEach((p, i) => {
+  createBuilding(p, PROJECT_POSITIONS[i][0], PROJECT_POSITIONS[i][1], i);
+});
+
+// ─── STARS / PARTICLES ──────────────────────────────────────────
+const starGeo = new THREE.BufferGeometry();
+const starCount = 800;
+const starPos = new Float32Array(starCount * 3);
+for (let i = 0; i < starCount; i++) {
+  starPos[i*3] = (Math.random()-0.5) * 200;
+  starPos[i*3+1] = 20 + Math.random() * 60;
+  starPos[i*3+2] = (Math.random()-0.5) * 200;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const starMat = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.12, transparent: true, opacity: 0.4 });
+scene.add(new THREE.Points(starGeo, starMat));
+
+// ─── AMBIENT CITY DOTS ───────────────────────────────────────────
+function addCityDots() {
+  const dotGeo = new THREE.SphereGeometry(0.06, 4, 4);
+  for (let i = 0; i < 60; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xFFFFDD, transparent: true, opacity: Math.random()*0.4+0.1 });
+    const dot = new THREE.Mesh(dotGeo, mat);
+    dot.position.set((Math.random()-0.5)*80, 0.15, (Math.random()-0.5)*80);
+    scene.add(dot);
+  }
+}
+addCityDots();
+
+// ─── CAMERA PATHS ────────────────────────────────────────────────
+const INTRO_CAM = { pos: new THREE.Vector3(0, 28, 32), target: new THREE.Vector3(0, 0, 0) };
+
+function projectCam(idx) {
+  const [px, pz] = PROJECT_POSITIONS[idx];
+  return {
+    pos: new THREE.Vector3(px - 4, 9, pz + 10),
+    target: new THREE.Vector3(px, 1.5, pz)
+  };
+}
+
+// ─── SCROLL HANDLER ──────────────────────────────────────────────
+const totalProjects = PROJECTS.length;
+const introSection = 0.08;
+const perProject = (1 - introSection) / totalProjects;
+
+let lastScroll = 0;
+let introVisible = true;
+
+window.addEventListener('scroll', () => {
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  scrollProgress = window.scrollY / maxScroll;
+  updateFromScroll(scrollProgress);
+});
+
+function updateFromScroll(t) {
+  document.getElementById('progress-bar').style.width = (t * 100) + '%';
+
+  if (t < introSection) {
+    // Intro: slowly descend
+    const tf = t / introSection;
+    camTarget.pos.set(
+      Math.sin(tf * 0.5) * 3,
+      28 - tf * 14,
+      32 - tf * 12
+    );
+    camTarget.target.set(0, 0, 0);
+
+    if (!introVisible) {
+      introVisible = true;
+      document.getElementById('intro-panel').style.opacity = '1';
+      document.getElementById('nav').classList.remove('visible');
+      document.getElementById('minimap').classList.remove('visible');
+      document.getElementById('project-panel').classList.remove('visible');
+    }
+  } else {
+    if (introVisible) {
+      introVisible = false;
+      document.getElementById('intro-panel').style.opacity = '0';
+      document.getElementById('nav').classList.add('visible');
+      document.getElementById('minimap').classList.add('visible');
+    }
+
+    const projT = (t - introSection) / (1 - introSection);
+    const projIdx = Math.min(Math.floor(projT * totalProjects), totalProjects - 1);
+    const localT = (projT * totalProjects) % 1;
+
+    // Camera: blend between projects
+    if (projIdx !== currentProject) {
+      showProject(projIdx);
+    }
+
+    // Within a project: orbit
+    const [px, pz] = PROJECT_POSITIONS[projIdx];
+    const orbitAngle = localT * Math.PI * 0.6 - 0.3;
+    const orbitR = 10;
+    const orbitH = 7 + Math.sin(localT * Math.PI) * 2;
+
+    camTarget.pos.set(
+      px + Math.sin(orbitAngle) * orbitR,
+      orbitH,
+      pz + Math.cos(orbitAngle) * orbitR
+    );
+    camTarget.target.set(px, 1.5, pz);
+
+    // Minimap
+    document.querySelectorAll('.minimap-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === projIdx);
+    });
+    document.getElementById('nav-count').textContent =
+      String(projIdx + 1).padStart(2,'0') + ' / ' + String(totalProjects).padStart(2,'0');
+  }
+}
+
+function showProject(idx) {
+  if (idx === currentProject) return;
+  currentProject = idx;
+  const p = PROJECTS[idx];
+
+  // Animate building up
+  buildingGroups.forEach((g, i) => {
+    g.userData.targetScale = i === idx ? 1 : 0.6;
+  });
+  buildingGroups[idx].userData.targetScale = 1;
+
+  // Update UI
+  document.getElementById('proj-index').textContent = 'Project ' + String(idx+1).padStart(2,'0');
+  document.getElementById('proj-name').textContent = p.name;
+  document.getElementById('proj-loc').textContent = p.location;
+  document.getElementById('proj-year').textContent = p.year;
+  document.getElementById('proj-area').textContent = p.area;
+  document.getElementById('proj-prog').textContent = p.program;
+
+  document.getElementById('project-panel').classList.remove('visible');
+  setTimeout(() => document.getElementById('project-panel').classList.add('visible'), 80);
+
+  // Update sun color subtly
+  const colors = [0xFFF4E0, 0xFFE8C0, 0xF0F8E0, 0xFFD8A0, 0xE8F0FF, 0xFFECA0];
+  sunLight.color.setHex(colors[idx] || 0xFFF4E0);
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────
+function openModal() {
+  const p = PROJECTS[currentProject];
+  if (!p) return;
+  document.getElementById('m-title').textContent = p.name;
+  document.getElementById('m-category').textContent = p.category;
+  document.getElementById('ms-loc').textContent = p.location;
+  document.getElementById('ms-year').textContent = p.year;
+  document.getElementById('ms-area').textContent = p.area;
+  document.getElementById('ms-client').textContent = p.client;
+  document.getElementById('m-desc').textContent = p.description;
+
+  // Images (color blocks)
+  const imgContainer = document.getElementById('m-images');
+  imgContainer.innerHTML = '';
+  const imgColors = [
+    `background: linear-gradient(135deg, #${p.color.toString(16).padStart(6,'0')}44, #${p.color.toString(16).padStart(6,'0')}22)`,
+    `background: linear-gradient(135deg, #18160E, #${p.color.toString(16).padStart(6,'0')}33)`,
+    `background: linear-gradient(135deg, #${p.accentColor.toString(16).padStart(6,'0')}22, #18160E)`,
+    `background: linear-gradient(135deg, #1E1B14, #${p.accentColor.toString(16).padStart(6,'0')}33)`,
+  ];
+  imgColors.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'modal-img';
+    div.style = c;
+    div.innerHTML = `<div class="img-placeholder">View ${i+1 < 3 ? 'Exterior' : 'Interior'} ${i+1 < 3 ? i+1 : i-1}</div>`;
+    imgContainer.appendChild(div);
+  });
+
+  // Awards
+  const awardsContainer = document.getElementById('m-awards');
+  awardsContainer.innerHTML = p.awards.map(a => `<span class="award-tag">${a}</span>`).join('');
+
+  document.getElementById('detail-modal').classList.add('open');
+  modalOpen = true;
+}
+function closeModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+  modalOpen = false;
+}
+
+// ─── MINIMAP JUMP ─────────────────────────────────────────────────
+function jumpToProject(idx) {
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  const t = introSection + (idx / totalProjects) * (1 - introSection) + 0.001;
+  window.scrollTo({ top: t * maxScroll, behavior: 'smooth' });
+}
+
+// ─── CURSOR ───────────────────────────────────────────────────────
+const cursorDot = document.getElementById('cursor-dot');
+const cursorRing = document.getElementById('cursor-ring');
+let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  cursorDot.style.transform = `translate(calc(${mouseX}px - 50%), calc(${mouseY}px - 50%))`;
+});
+
+document.querySelectorAll('button, .minimap-dot').forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+});
+
+// ─── ANIMATE LOOP ─────────────────────────────────────────────────
+const clock = new THREE.Clock();
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function lerpV3(v, target, t) {
+  v.x = lerp(v.x, target.x, t);
+  v.y = lerp(v.y, target.y, t);
+  v.z = lerp(v.z, target.z, t);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = dt * 60; // normalize to 60fps
+
+  // Smooth camera
+  const speed = 0.05;
+  lerpV3(camState.pos, camTarget.pos, speed * t);
+  lerpV3(camState.target, camTarget.target, speed * t);
+
+  camera.position.copy(camState.pos);
+  camera.lookAt(camState.target);
+
+  // Smooth cursor ring
+  ringX = lerp(ringX, mouseX, 0.12 * t);
+  ringY = lerp(ringY, mouseY, 0.12 * t);
+  cursorRing.style.transform = `translate(calc(${ringX}px - 50%), calc(${ringY}px - 50%))`;
+
+  // Building scale animation
+  buildingGroups.forEach((g, i) => {
+    const ts = g.userData.targetScale;
+    const cs = g.userData.currentScale;
+    const ns = lerp(cs, ts, 0.06 * t);
+    g.userData.currentScale = ns;
+    g.scale.set(1, ns, 1);
+  });
+
+  // Animate building up when first entering project range
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  const sp = window.scrollY / maxScroll;
+  if (sp > introSection) {
+    const projT = (sp - introSection) / (1 - introSection);
+    const projIdx = Math.min(Math.floor(projT * totalProjects), totalProjects - 1);
+    buildingGroups[projIdx].userData.targetScale = 1;
+    buildingGroups.forEach((g, i) => {
+      if (i !== projIdx) g.userData.targetScale = 0.45;
+    });
+  }
+
+  // Sun rotation (slow time of day)
+  const elapsed = clock.getElapsedTime();
+  sunLight.position.x = Math.cos(elapsed * 0.02) * 20;
+  sunLight.position.z = Math.sin(elapsed * 0.02) * 10;
+
+  // Stars fade
+  starMat.opacity = Math.max(0, 0.4 - scrollProgress * 0.6);
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// ─── RESIZE ───────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ─── INITIAL CALL ─────────────────────────────────────────────────
+updateFromScroll(0);
+// Trigger first project building to be target scale 1
+buildingGroups[0].userData.targetScale = 1;
+buildingGroups.forEach((g,i) => { if(i>0) g.userData.targetScale = 0.45; });
+</script>
+</body>
+</html>
