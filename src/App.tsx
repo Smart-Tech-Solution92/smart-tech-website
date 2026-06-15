@@ -392,12 +392,7 @@ function HeroPage() {
           </div>
         </div>
 
-        <button
-          onClick={() => { window.scrollTo({ top: 0 }); navigate('services'); }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 text-blue-500 animate-bounce"
-        >
-          <ChevronDown size={28} />
-        </button>
+   
       </section>
     </PageWrapper>
   );
