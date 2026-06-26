@@ -81,18 +81,7 @@ export function HomePage() {
 
       <HomeServices />
 
-      <section className="py-16 px-4 stats-bg">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
-          {stats.map(({ value, suffix, label }) => (
-            <div key={label} className="stat-item text-center">
-              <div className="text-4xl md:text-5xl font-orbitron font-black text-blue-600 mb-2">
-                <Counter target={value} suffix={suffix} />
-              </div>
-              <div className="uppercase tracking-[0.2em] text-slate-500 text-xs font-rajdhani">{label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      
 
       <TechStack />
     </>
