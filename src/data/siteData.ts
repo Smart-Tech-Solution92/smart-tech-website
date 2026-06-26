@@ -1,4 +1,8 @@
 import { Brain, Cog, Globe } from 'lucide-react';
+import mobileImage from '../assets/images/mobile.png';
+import aiImage from '../assets/images/ai.webp';
+import enterpriseImage from '../assets/images/enterprise.jpg';
+import gymtrackImage from '../assets/images/gymtrack.png';
 
 export const services = [
   {
@@ -6,21 +10,21 @@ export const services = [
     title: 'Web and Mobile App Development',
     desc: 'Leveraging cutting-edge technologies, agile development practices, and user-centered design that streamline operations, enhance customer engagement, and accelerate digital transformation.',
     tags: ['Web App', 'Web Sites', 'Web page'],
-    image: '/images/mobile.png',
+    image: mobileImage,
   },
   {
     icon: Brain,
     title: 'AI Solutions',
     desc: 'Harness the power of machine learning and neural networks to automate decisions, predict outcomes, and unlock insights hidden in your data.',
     tags: ['Machine Learning', 'NLP', 'Computer Vision'],
-    image: '/images/ai.webp',
+    image: aiImage,
   },
   {
     icon: Cog,
     title: 'Enterprise Solutions',
     desc: 'We develop intelligent enterprise solutions that streamline operations, automate workflows, and empower businesses with scalable, data-driven systems for sustainable growth.',
     tags: ['Automation', 'Workflows', 'Scalability'],
-    image: '/images/enterprise.jpg',
+    image: enterpriseImage,
   },
 ] as const;
 
@@ -76,7 +80,7 @@ export const projects = [
     desc: 'Full-featured gym management platform for memberships, scheduling, and admin operations — built for fitness businesses to run smarter.',
     metric: 'All-in-one',
     metricLabel: 'gym operations',
-    image: '/images/gymtrack.png',
+    image: gymtrackImage,
     gradient: 'from-orange-500/30 via-pink-600/20 to-transparent',
     accent: 'text-orange-400',
     ring: 'border-orange-400/30',
