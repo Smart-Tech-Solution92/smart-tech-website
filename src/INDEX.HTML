@@ -550,6 +550,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+  
 // ─── PROJECT DATA ───────────────────────────────────────────────
 const PROJECTS = [
   {
@@ -641,7 +642,22 @@ const PROJECTS = [
     color: 0xC8A858,
     accentColor: 0xE8C878,
     buildingType: "campus"
-  }
+  },
+  {
+    name: "The Fluid Pavilion",
+    location: "Valencia, Spain",
+    coords: [-0.37, 39.46],
+    year: "2026",
+    area: "8,900 m²",
+    category: "Exhibition / Pavilion",
+    program: "Cultural",
+    description: "A study in organic fluid dynamics, featuring a cantilevered hourglass footprint and vertical structural columns that serve as both support and aesthetic conduits.",
+    client: "Valencia Arts Council",
+    awards: ["Innovation in Form 2026", "Sustainable Design Gold"],
+    color: 0xEAEAEA, // Matches the white/light grey of your images
+    accentColor: 0x99AABB,
+    buildingType: "dynamic_fluid" // New type created for your design
+  },
 ];
 
 // ─── STATE ──────────────────────────────────────────────────────
@@ -707,23 +723,37 @@ rimLight.position.set(0, 5, -20);
 scene.add(rimLight);
 
 // ─── GROUND PLANE ───────────────────────────────────────────────
-const groundGeo = new THREE.PlaneGeometry(200, 200, 64, 64);
+const textureLoader = new THREE.TextureLoader();
+
+const groundTexture = textureLoader.load('earth.png');
+groundTexture.wrapS = THREE.RepeatWrapping;
+groundTexture.wrapT = THREE.RepeatWrapping;
+groundTexture.repeat.set(4, 4);
+
+const groundGeo = new THREE.PlaneGeometry(200, 200, 256, 256);
+
 const groundPos = groundGeo.attributes.position;
-// Subtle terrain undulation
+
+// Optional terrain deformation
 for (let i = 0; i < groundPos.count; i++) {
   const x = groundPos.getX(i);
   const y = groundPos.getY(i);
-  const z = Math.sin(x * 0.08) * Math.cos(y * 0.06) * 0.8
-           + Math.sin(x * 0.2 + 0.5) * Math.cos(y * 0.15) * 0.3;
-  groundPos.setZ(i, z);
+
+  const height =
+    Math.sin(x * 0.05) * Math.cos(y * 0.05) * 0.6 +
+    Math.sin(x * 0.15) * Math.cos(y * 0.12) * 0.3;
+
+  groundPos.setZ(i, height);
 }
+
 groundGeo.computeVertexNormals();
 
 const groundMat = new THREE.MeshStandardMaterial({
-  color: 0x1A1812,
-  roughness: 0.95,
+  map: groundTexture,
+  roughness: 1.0,
   metalness: 0.0,
 });
+
 const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
@@ -762,6 +792,38 @@ createRoad(-12,10, -18,-8);
 // ─── BUILDINGS ──────────────────────────────────────────────────
 const buildings = [];
 const buildingGroups = [];
+function createWaveFloor(width = 4.5, depth = 2.2, thickness = 0.15) {
+
+  const shape = new THREE.Shape();
+
+  const w = width / 2;
+  const d = depth / 2;
+
+  shape.moveTo(-w, -d);
+
+  // Front wave
+  shape.bezierCurveTo(
+    -w * 0.5, -d - 0.4,
+     w * 0.5, -d + 0.4,
+     w, -d
+  );
+
+  shape.lineTo(w, d);
+
+  // Rear wave
+  shape.bezierCurveTo(
+     w * 0.5, d + 0.25,
+    -w * 0.5, d - 0.25,
+    -w, d
+  );
+
+  shape.closePath();
+
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    bevelEnabled: false
+  });
+}
 
 function createBuilding(project, px, pz, idx) {
   const group = new THREE.Group();
@@ -837,18 +899,375 @@ function createBuilding(project, px, pz, idx) {
       col.position.set(Math.cos(a)*1.4, 0.35, Math.sin(a)*1.4);
       group.add(col);
     }
-  } else if (type === 'residential') {
-    // Multi-tower cluster
-    const heights = [2.8, 2.0, 3.5, 1.8, 2.5, 1.5];
-    const offsets = [[-0.9,-0.6],[0.2,-0.8],[0.9,0.0],[-0.4,0.7],[0.6,0.8],[-1.1,0.4]];
-    heights.forEach((h, i) => {
-      const size = 0.42;
-      const geo = new THREE.BoxGeometry(size, h, size);
-      const mesh = new THREE.Mesh(geo, i%2===0 ? mat : glassMat);
-      mesh.position.set(offsets[i][0], h/2, offsets[i][1]);
-      mesh.castShadow = true; group.add(mesh);
-    });
-  } else if (type === 'terminal') {
+  }
+else if (type === "dynamic_fluid") {
+
+  const whiteMat = new THREE.MeshStandardMaterial({
+    color: 0xEAEAEA,
+    roughness: 0.2,
+    metalness: 0.05
+  });
+
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0x99AABB,
+    transparent: true,
+    opacity: 0.45,
+    roughness: 0.05,
+    metalness: 0.9
+  });
+
+  const pipeMat = new THREE.MeshStandardMaterial({
+    color: 0xBFC5CB,
+    metalness: 0.9,
+    roughness: 0.15
+  });
+
+  // ==================================================
+  // STONE PODIUM
+  // ==================================================
+
+  const podium = new THREE.Mesh(
+    new THREE.BoxGeometry(5.6, 0.8, 3.6),
+    concreteMat
+  );
+
+  podium.position.y = 0.4;
+  podium.castShadow = true;
+  podium.receiveShadow = true;
+  group.add(podium);
+
+  // ==================================================
+  // ENTRANCE ARCH
+  // ==================================================
+
+  const archShape = new THREE.Shape();
+
+  archShape.moveTo(-2.4, 0);
+
+  archShape.quadraticCurveTo(
+    0,
+    2.3,
+    2.4,
+    0
+  );
+
+  archShape.lineTo(2.4, 1.1);
+  archShape.lineTo(-2.4, 1.1);
+
+  const archGeo = new THREE.ExtrudeGeometry(
+    archShape,
+    {
+      depth: 2.8,
+      bevelEnabled: false
+    }
+  );
+
+  const arch = new THREE.Mesh(
+    archGeo,
+    whiteMat
+  );
+
+  arch.rotation.y = Math.PI;
+  arch.position.set(0, 0.8, 1.4);
+
+  arch.castShadow = true;
+  group.add(arch);
+
+  // ==================================================
+  // WAVE FLOOR FUNCTION
+  // ==================================================
+
+  function createWaveFloor(
+    width = 4.8,
+    depth = 2.4,
+    thickness = 0.12
+  ) {
+
+    const shape = new THREE.Shape();
+
+    const w = width / 2;
+    const d = depth / 2;
+
+    shape.moveTo(-w, -d);
+
+    shape.bezierCurveTo(
+      -w * 0.5,
+      -d - 0.45,
+
+      w * 0.5,
+      -d + 0.45,
+
+      w,
+      -d
+    );
+
+    shape.lineTo(w, d);
+
+    shape.bezierCurveTo(
+      w * 0.5,
+      d + 0.25,
+
+      -w * 0.5,
+      d - 0.25,
+
+      -w,
+      d
+    );
+
+    shape.closePath();
+
+    return new THREE.ExtrudeGeometry(
+      shape,
+      {
+        depth: thickness,
+        bevelEnabled: false
+      }
+    );
+  }
+
+  // ==================================================
+  // CURVED GLASS CORE
+  // ==================================================
+
+  const glassCore = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      1.7,
+      1.7,
+      4.8,
+      64,
+      1,
+      false,
+      Math.PI * 0.1,
+      Math.PI * 0.8
+    ),
+    glassMat
+  );
+
+  glassCore.rotation.y = Math.PI / 2;
+  glassCore.position.y = 3.8;
+
+  group.add(glassCore);
+
+  // ==================================================
+  // GLASS FLOORS
+  // ==================================================
+
+  for (let i = 0; i < 5; i++) {
+
+    const glassLevel = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        1.65,
+        1.65,
+        0.45,
+        48,
+        1,
+        false,
+        Math.PI * 0.12,
+        Math.PI * 0.76
+      ),
+      glassMat
+    );
+
+    glassLevel.rotation.y = Math.PI / 2;
+
+    glassLevel.position.y =
+      2.35 + i * 0.8;
+
+    group.add(glassLevel);
+  }
+
+  // ==================================================
+  // WAVE SLABS
+  // ==================================================
+
+  for (let i = 0; i < 5; i++) {
+
+    const floor = new THREE.Mesh(
+      createWaveFloor(
+        4.8 - i * 0.15,
+        2.5,
+        0.12
+      ),
+      whiteMat
+    );
+
+    floor.rotation.x = Math.PI / 2;
+
+    floor.position.y =
+      2.0 + i * 0.8;
+
+    floor.position.z = -1.25;
+
+    floor.castShadow = true;
+
+    group.add(floor);
+  }
+
+  // ==================================================
+  // ROOF WAVE
+  // ==================================================
+
+  const roof = new THREE.Mesh(
+    createWaveFloor(
+      5.2,
+      2.6,
+      0.18
+    ),
+    whiteMat
+  );
+
+  roof.rotation.x = Math.PI / 2;
+
+  roof.position.y = 6.2;
+
+  roof.castShadow = true;
+
+  group.add(roof);
+
+  // ==================================================
+  // LEFT STRUCTURAL CORE
+  // ==================================================
+
+  const leftCore = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      0.28,
+      0.34,
+      7,
+      24
+    ),
+    pipeMat
+  );
+
+  leftCore.position.set(
+    -2.7,
+    3.5,
+    0
+  );
+
+  leftCore.castShadow = true;
+
+  group.add(leftCore);
+
+  // ==================================================
+  // RIGHT STRUCTURAL CORE
+  // ==================================================
+
+  const rightCore = leftCore.clone();
+
+  rightCore.position.x = 2.7;
+
+  group.add(rightCore);
+
+  // ==================================================
+  // SPIRAL WRAPS
+  // ==================================================
+
+  function addSpiral(x) {
+
+    const points = [];
+
+    const turns = 4;
+    const radius = 0.38;
+    const height = 7;
+
+    for (let i = 0; i <= 200; i++) {
+
+      const t = i / 200;
+
+      points.push(
+        new THREE.Vector3(
+          x +
+          Math.cos(
+            t * Math.PI * 2 * turns
+          ) * radius,
+
+          t * height,
+
+          Math.sin(
+            t * Math.PI * 2 * turns
+          ) * radius * 0.35
+        )
+      );
+    }
+
+    const curve =
+      new THREE.CatmullRomCurve3(
+        points
+      );
+
+    const spiral = new THREE.Mesh(
+      new THREE.TubeGeometry(
+        curve,
+        200,
+        0.03,
+        8,
+        false
+      ),
+      whiteMat
+    );
+
+    spiral.castShadow = true;
+
+    group.add(spiral);
+  }
+
+  addSpiral(-2.7);
+  addSpiral(2.7);
+
+  // ==================================================
+  // GLASS ENTRANCE
+  // ==================================================
+
+  const entrance = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.6,
+      0.9,
+      0.2
+    ),
+    glassMat
+  );
+
+  entrance.position.set(
+    0,
+    0.7,
+    1.45
+  );
+
+  group.add(entrance);
+
+  // ==================================================
+  // SIDE CANTILEVERS
+  // ==================================================
+
+  for (let i = 0; i < 4; i++) {
+
+    const balcony = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.45,
+        0.45,
+        0.08,
+        32
+      ),
+      whiteMat
+    );
+
+    balcony.scale.set(
+      1.7,
+      1,
+      0.45
+    );
+
+    balcony.rotation.z = Math.PI / 2;
+
+    balcony.position.set(
+      2.2,
+      2.3 + i * 0.8,
+      0.7
+    );
+
+    group.add(balcony);
+  }
+}else if (type === 'terminal') {
     // Wave roof
     const roofPoints = [];
     for (let i = 0; i <= 20; i++) {
@@ -898,7 +1317,7 @@ function createBuilding(project, px, pz, idx) {
   const site = new THREE.Mesh(siteGeo, siteMat);
   site.rotation.x = -Math.PI/2; site.position.y = 0.01;
   site.receiveShadow = true; group.add(site);
-
+   
   // Scale start (for animation)
   group.scale.set(1, 0, 1);
   group.userData = { targetScale: 1, currentScale: 0 };
@@ -910,7 +1329,7 @@ function createBuilding(project, px, pz, idx) {
 
 // Project positions on the "map"
 const PROJECT_POSITIONS = [
-  [-18, -8], [14, -10], [26, 4], [6, 14], [-12, 10], [18, 18]
+  [-18, -8], [14, -10], [26, 4], [6, 14], [-12, 10], [18, 18],[32, -4] 
 ];
 
 PROJECTS.forEach((p, i) => {
