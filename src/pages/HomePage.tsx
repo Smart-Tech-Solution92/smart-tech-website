@@ -94,7 +94,6 @@ export function HomePage() {
         </div>
       </section>
 
-      <Partners />
       <TechStack />
     </>
   );
