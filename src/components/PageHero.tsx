@@ -1,4 +1,4 @@
-import { Brain, Cog, Globe, MapPin, Sparkles } from 'lucide-react';
+
 import { SectionBackdrop } from './SectionBackdrop';
 
 type PageHeroVariant = 'services' | 'about' | 'works' | 'contact';
@@ -29,19 +29,7 @@ export function PageHero({
 
       {variant === 'services' && (
         <div className="pointer-events-none absolute inset-0">
-          {[Globe, Brain, Cog].map((Icon, i) => (
-            <div
-              key={i}
-              className="absolute rounded-2xl border border-blue-200/60 bg-white/60 p-4 shadow-lg backdrop-blur-sm page-hero-float"
-              style={{
-                top: `${18 + i * 22}%`,
-                left: `${8 + i * 28}%`,
-                animationDelay: `${i * 0.6}s`,
-              }}
-            >
-              <Icon size={22} className="text-blue-600" />
-            </div>
-          ))}
+         
           <div className="absolute right-[8%] top-[20%] h-48 w-48 rounded-full border border-blue-300/30 page-hero-spin" />
         </div>
       )}
@@ -63,16 +51,14 @@ export function PageHero({
         <div className="pointer-events-none absolute inset-0 flex items-center justify-end pr-[10%]">
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-blue-400/15 blur-2xl page-hero-pulse" />
-            <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-blue-200/50 bg-white/70 backdrop-blur-md shadow-lg">
-              <MapPin size={36} className="text-blue-600" />
-            </div>
+            
           </div>
         </div>
       )}
 
       <div className="relative z-10 max-w-5xl mx-auto w-full">
         <p className="font-rajdhani text-xs tracking-[0.45em] uppercase mb-4 flex items-center gap-2 text-blue-600">
-          <Sparkles size={14} className="text-blue-500" />
+   
           {eyebrow}
         </p>
         <h1 className="font-orbitron font-black text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.05] mb-5 text-slate-900">
